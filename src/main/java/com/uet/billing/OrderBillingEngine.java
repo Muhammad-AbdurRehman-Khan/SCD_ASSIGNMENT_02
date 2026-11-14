@@ -22,11 +22,15 @@ public class OrderBillingEngine {
     private final DiscountCalculator discountCalculator = new DiscountCalculator();
     private final TaxCalculator taxCalculator = new TaxCalculator();
     private final Map<String, PaymentStrategy> paymentStrategies = new HashMap<>();
+    private final Map<String, NotificationService> notificationServices = new HashMap<>();
 
     public OrderBillingEngine() {
         for (PaymentStrategy strategy : List.of(
                 new CreditCardPayment(), new EasyPaisaPayment(), new CashOnDeliveryPayment())) {
             paymentStrategies.put(strategy.methodName(), strategy);
+        }
+        for (NotificationService service : List.of(new EmailNotificationService(), new SmsNotificationService())) {
+            notificationServices.put(service.channel(), service);
         }
     }
 
@@ -104,15 +108,12 @@ public class OrderBillingEngine {
             System.out.println("Failed to write order log: " + e.getMessage());
         }
 
-        // 5. Direct Notification Dispatch (Coupled side-effect)
+        // Step 7: notification channels are NotificationService implementations now
         String notifyChannel = (String) orderData.getOrDefault("notifyChannel", "EMAIL");
-        if (notifyChannel.equals("EMAIL")) {
-            System.out.println("[EMAIL DISPATCHED] To: " + email + " | Your order of PKR " 
-                               + String.format("%.2f", payableAmount) + " is confirmed!");
-        } else if (notifyChannel.equals("SMS")) {
+        NotificationService notificationService = notificationServices.get(notifyChannel);
+        if (notificationService != null) {
             String phone = (String) orderData.getOrDefault("phone", "0300-0000000");
-            System.out.println("[SMS DISPATCHED] To: " + phone + " | Order confirmed! Paid: PKR " 
-                               + String.format("%.2f", payableAmount));
+            notificationService.send(new NotificationRequest(email, phone, payableAmount));
         }
 
         return true;
