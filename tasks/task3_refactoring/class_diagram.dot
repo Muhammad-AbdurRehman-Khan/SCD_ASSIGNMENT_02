@@ -1,0 +1,51 @@
+digraph G {
+  rankdir=LR; nodesep=0.18; ranksep=0.9; splines=true; compound=true;
+  fontname="Helvetica"; labelloc=t; fontsize=18;
+  label="Refactored architecture - OrderBillingEngine split into focused classes";
+  node [shape=box, style="rounded,filled", fillcolor="#FFFFFF", fontname="Helvetica", fontsize=11, color="#444444"];
+  edge [fontname="Helvetica", fontsize=9, color="#444444"];
+
+  engine  [label="OrderBillingEngine\n(thin facade, 18 lines)", fillcolor="#FFF2CC"];
+  factory [label="BillingFactory\n(composition root)", fillcolor="#FFF2CC"];
+  service [label="OrderService\n(only coordinates)", fillcolor="#FFE0B2", penwidth=2];
+
+  parser  [label="OrderRequestParser\n(validation + typed OrderRequest)"];
+  taxc    [label="TaxCalculator"];
+  disc    [label="DiscountCalculator"];
+
+  node [fillcolor="#D6E9FF", fontname="Helvetica-Oblique"];
+  dpol    [label="<<interface>>\nDiscountPolicy"];
+  pay     [label="<<interface>>\nPaymentStrategy"];
+  notif   [label="<<interface>>\nNotificationService"];
+  repo    [label="<<interface>>\nOrderRepository"];
+
+  node [fillcolor="#FFFFFF", fontname="Helvetica"];
+  reg  [label="RegularDiscountPolicy"];
+  vip  [label="VipDiscountPolicy"];
+  stu  [label="StudentDiscountPolicy"];
+  corp [label="CorporateDiscountPolicy"];
+  cc   [label="CreditCardPayment"];
+  ep   [label="EasyPaisaPayment"];
+  cod  [label="CashOnDeliveryPayment"];
+  em   [label="EmailNotificationService"];
+  sms  [label="SmsNotificationService"];
+  file [label="FileOrderRepository"];
+
+  node [style="rounded,dashed", fillcolor="#F2F2F2", color="#888888", fontcolor="#555555"];
+  jazz [label="JazzCashPayment\n(live challenge: new class only)"];
+  wa   [label="WhatsAppNotification\n(live challenge: new class only)"];
+
+  engine -> service;
+  factory -> service [style=dashed];
+  service -> parser; service -> disc; service -> taxc;
+  service -> pay; service -> notif; service -> repo;
+  disc -> dpol;
+
+  edge [arrowhead=empty, style=solid];
+  reg -> dpol; vip -> dpol; stu -> dpol; corp -> dpol;
+  cc -> pay; ep -> pay; cod -> pay;
+  em -> notif; sms -> notif;
+  file -> repo;
+  edge [arrowhead=empty, style=dashed, color="#888888"];
+  jazz -> pay; wa -> notif;
+}
